@@ -15,7 +15,7 @@ const errorMiddleWare = require('./middleware/error');
 
 const app = express();
 
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({ origin: "https://elite-mart-frontend.vercel.app", credentials: true }));
 app.use(express.json());
 app.use(bodyParser.urlencoded({extended : false}));
 app.use(fileUpload());
@@ -59,6 +59,6 @@ app.use('/api/v1',userRoute);
 app.use('/api/v1',orderRoute);
 app.use("/api/v1",paymentRoute);
 
-app.listen(PORT,()=>{
-    console.log(`server is running on http://localhost:${PORT}`);
+app.listen(()=>{
+    console.log("server is running");
 });
