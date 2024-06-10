@@ -15,7 +15,7 @@ const errorMiddleWare = require('./middleware/error');
 
 const app = express();
 
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({ origin: "https://elite-mart-nine.vercel.app", credentials: true }));
 app.use(express.json());
 app.use(bodyParser.urlencoded({extended : false}));
 app.use(fileUpload());
