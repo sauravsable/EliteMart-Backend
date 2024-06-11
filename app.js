@@ -18,8 +18,6 @@ const app = express();
 app.use(cors({ 
     origin: "https://elite-mart-nine.vercel.app", 
     credentials: true,
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    allowedHeaders: 'Content-Type, Authorization', 
 }));
 
 app.use(express.json());
