@@ -4,22 +4,25 @@ const sendToken = require("../utils/jwtToken");
 // const sendEmail = require("../utils/sendEmail");
 const Mail = require("../utils/mail");
 const crypto = require("crypto");
-const uploadToCloudinary = require("../utils/uploadToCloudinary");
-const cloudinary = require('cloudinary').v2;
+const {uploadToS3, deleteFromS3} = require('../utils/uploadToS3');
 
 exports.registerUser = async (req, res, next) => {
     
-    const {name,email,password,avatar} = req.body;
+    const {name,email,password} = req.body;
 
-    const data = await uploadToCloudinary(avatar);
+    const avatar = req.file;
+    
+    const {key,imageUrl} = await uploadToS3(avatar);
+
+    console.log(imageUrl);
 
         const user = await User.create({
           name,
           email,
           password,
           avatar: {
-            public_id: data.public_id,
-            url: data.secure_url,
+            key: key,
+            url: imageUrl,
           },
         });
 
@@ -178,7 +181,9 @@ exports.updatePassword = async(req,res,next)=>{
 exports.updateUserProfile = async (req, res, next) => {
     try {
 
-        const {name,email,avatar} = req.body;
+        const {name,email} = req.body;
+
+        const avatar = req.file; 
 
         const newUserData = {
             name: name,
@@ -192,21 +197,18 @@ exports.updateUserProfile = async (req, res, next) => {
                 return res.status(404).json({ success: false, message: "User not found" });
             }
 
-            const imageId = user.avatar.public_id;
+            const deletekey = user.avatar.key;
 
-            // Delete previous avatar from Cloudinary
-            if (imageId) {
-                await cloudinary.uploader.destroy(imageId); // Use cloudinary.uploader.destroy instead
-                console.log("Previous avatar deleted from Cloudinary");
-            }
+            await deleteFromS3(deletekey);
 
-            const data = await uploadToCloudinary(avatar);
+            const avatar = req.file;
+    
+            const {key,imageUrl} = await uploadToS3(avatar);
 
-            console.log(data);
             
             newUserData.avatar = {
-                public_id: data.public_id,
-                url: data.secure_url
+                key: key,
+                url: imageUrl
             };
         }
 

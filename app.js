@@ -1,12 +1,9 @@
 require('dotenv').config();
 const express = require('express');
-const bodyParser = require("body-parser")
 const session  =require('express-session');
 const cookieParser = require('cookie-parser');
-const fileUpload = require("express-fileupload");
 const cors = require("cors");
 
-const cloudinary =  require("cloudinary");
 const connectDataBase = require('./database');
 
 const PORT = process.env.PORT || 5500;
@@ -17,12 +14,11 @@ const app = express();
 
 app.use(cors({ 
     origin: "https://elite-mart-nine.vercel.app", 
+    // origin: true,
     credentials: true,
 }));
 
 app.use(express.json());
-app.use(bodyParser.urlencoded({extended : false}));
-app.use(fileUpload());
 
 app.use(session({
     secret: process.env.SESSION_SECRET,
@@ -43,15 +39,25 @@ app.use(errorMiddleWare);
 
 connectDataBase();
 
-cloudinary.config({
-    cloud_name : process.env.CLOUDINARY_NAME,
-    api_key : process.env.CLOUDINARY_API_KEY ,
-    api_secret : process.env.CLOUDINARY_API_SECRET,
-})
 
 app.get('/',(req,res)=>{
 res.send("server is running");    
 })
+
+app.get('/api/v1/checkToken', (req, res) => {
+    const { token } = req.cookies;
+
+    if (!token) {
+        return res.json({ isToken: false });
+    }
+
+    try {
+        jwt.verify(token, process.env.JWT_SECRET);
+        return res.json({ isToken: true });
+    } catch (error) {
+        return res.json({ isToken: false });
+    }
+});
 
 // Routes
 const productRoute = require('./routes/productRoute');
