@@ -227,6 +227,12 @@ exports.getAllUsers = async(req,res,next)=>{
 
     const users = await User.find();
 
+    // const users = await User.aggregate([
+    //     {
+    //       $match: {}
+    //     }
+    // ]);
+      
     res.status(200).json({
         success:true,
         users

@@ -3,7 +3,8 @@ const express = require('express');
 const session  =require('express-session');
 const cookieParser = require('cookie-parser');
 const cors = require("cors");
-
+const logger = require("./logger");
+const morgan = require ("morgan");
 const connectDataBase = require('./database');
 
 const PORT = process.env.PORT || 5500;
@@ -13,7 +14,7 @@ const errorMiddleWare = require('./middleware/error');
 const app = express();
 
 app.use(cors({ 
-    origin: "https://elite-mart-nine.vercel.app", 
+    origin: ["https://elite-mart-nine.vercel.app","http://localhost:3000"], 
     // origin: true,
     credentials: true,
 }));
@@ -33,31 +34,18 @@ app.use(session({
 
 app.use(cookieParser());
 
-//Middleware for error
-app.use(errorMiddleWare);
-
-
 connectDataBase();
 
+const morganFormat = ':method :url :status :response-time ms';
+
+app.use(morgan(morganFormat, { stream: logger.stream }));
+
+// Middleware for handling errors
+app.use(logger.errorLogger);
 
 app.get('/',(req,res)=>{
 res.send("server is running");    
 })
-
-app.get('/api/v1/checkToken', (req, res) => {
-    const { token } = req.cookies;
-
-    if (!token) {
-        return res.json({ isToken: false });
-    }
-
-    try {
-        jwt.verify(token, process.env.JWT_SECRET);
-        return res.json({ isToken: true });
-    } catch (error) {
-        return res.json({ isToken: false });
-    }
-});
 
 // Routes
 const productRoute = require('./routes/productRoute');
@@ -69,6 +57,10 @@ app.use('/api/v1',productRoute);
 app.use('/api/v1',userRoute);
 app.use('/api/v1',orderRoute);
 app.use("/api/v1",paymentRoute);
+
+//Middleware for error
+app.use(errorMiddleWare);
+
 
 app.listen(PORT,()=>{
     console.log(`server is running on ${PORT}`);

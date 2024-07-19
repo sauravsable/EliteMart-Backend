@@ -52,6 +52,14 @@ exports.getSingleOrder = async (req,res,next)=>{
 exports.myOrder = async (req,res,next)=>{
     const orders = await Order.find({ user: req.user._id });
 
+    // const orders = await Order.aggregate([
+    //     {
+    //       $match: {
+    //         user : req.user._id
+    //       }
+    //     }
+    // ]);
+
     res.status(200).json({
         success:true,
         orders
