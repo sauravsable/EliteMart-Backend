@@ -1,7 +1,7 @@
 const ErrorHandler = require("../utils/errorHandler");
 const User = require('../models/userModel');
+const Cart = require('../models/cartModel');
 const sendToken = require("../utils/jwtToken");
-// const sendEmail = require("../utils/sendEmail");
 const Mail = require("../utils/mail");
 const crypto = require("crypto");
 const {uploadToS3, deleteFromS3} = require('../utils/uploadToS3');
@@ -290,5 +290,45 @@ exports.deleteUser = async(req,res,next)=>{
     res.status(200).json({
         success:true,
         message:"User Deleted Successfully"
+    });
+};
+
+exports.addCart = async (req, res, next) => {
+
+        const { cartname } = req.body;
+
+        if (!cartname) {
+            return next(new ErrorHandler("Please Enter Cart Name", 400));
+        }
+
+        const existingCart = await Cart.findOne({ userId: req.user._id, cartName: cartname });
+
+        if (existingCart) {
+            return next(new ErrorHandler("Please try a different name", 400));
+        }
+
+        await Cart.create({
+            userId: req.user._id,
+            cartName: cartname
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "Cart Created Successfully"
+        });
+};
+
+
+exports.getCarts = async (req, res, next) => {
+
+    const carts = await Cart.find({ userId: req.user._id});
+
+    if (!carts) {
+        return next(new ErrorHandler("No Carts", 400));
+    }
+
+    res.status(200).json({
+        success: true,
+        carts : carts
     });
 };
