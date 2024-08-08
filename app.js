@@ -14,7 +14,7 @@ const errorMiddleWare = require('./middleware/error');
 const app = express();
 
 app.use(cors({ 
-    origin: ["https://elite-mart-nine.vercel.app","http://localhost:3000"], 
+    origin: ["http://localhost:3000","https://elite-mart-nine.vercel.app"], 
     // origin: true,
     credentials: true,
 }));
@@ -52,11 +52,15 @@ const productRoute = require('./routes/productRoute');
 const userRoute = require('./routes/userRoute');
 const orderRoute = require('./routes/orderRoute');
 const paymentRoute = require('./routes/paymentRoute');
+const adminRoute = require('./routes/adminRoute');
+const cartRoute =  require('./routes/cartRoute');
 
 app.use('/api/v1',productRoute);
 app.use('/api/v1',userRoute);
 app.use('/api/v1',orderRoute);
 app.use("/api/v1",paymentRoute);
+app.use("/api/v1",adminRoute);
+app.use("/api/v1",cartRoute);
 
 //Middleware for error
 app.use(errorMiddleWare);
