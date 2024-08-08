@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema({
     name:{
         type:String,
         required:[true,"Please Enter Your Name"],
+        unique:true,
         maxLength:[30,"Name Cannot Exceed"],
         minLength:[4,"Name should have more than 4 characters"]
     },
@@ -26,11 +27,9 @@ const userSchema = new mongoose.Schema({
     avatar:{
             key:{
              type:String,
-             required:true
             },
             url:{
              type:String,
-             required:true
             }
     },
     role:{

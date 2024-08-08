@@ -1,5 +1,5 @@
 const express = require('express');
-const {registerUser, loginUser, logout, forgetPassword, resetPassword, getUserDetails, updatePassword, updateUserProfile, getAllUsers, getSingleUser, updateUserRole, deleteUser, addCart, getCarts } = require('../controller/userController');
+const {registerUser, loginUser, logout, forgetPassword, resetPassword, getUserDetails, updatePassword, updateUserProfile, updateProfileImage,getAllUsers } = require('../controller/userController');
 const {isAuthenticatedUser, authorizeRoles} = require('../middleware/auth');
 const multer = require('multer');
 const router = express.Router();
@@ -19,18 +19,12 @@ router.route("/logout").get(logout);
 
 router.route("/me").get(isAuthenticatedUser,getUserDetails);
 
-router.route("/create/cart").post(isAuthenticatedUser,addCart);
-
-router.route("/getcarts").get(isAuthenticatedUser,getCarts);
-
 router.route("/password/update").put(isAuthenticatedUser,updatePassword);
 
-router.put("/me/update",upload.single('avatar'),isAuthenticatedUser,updateUserProfile);
+router.put("/me/update",isAuthenticatedUser,updateUserProfile);
 
-router.route("/admin/users").get(isAuthenticatedUser,authorizeRoles("admin"),getAllUsers);
+router.put("/me/updateProfileImage",upload.single('avatar'),isAuthenticatedUser,updateProfileImage);
 
-router.route("/admin/user/:id").get(isAuthenticatedUser,authorizeRoles("admin"),getSingleUser)
-                               .put(isAuthenticatedUser,authorizeRoles("admin"),updateUserRole)
-                               .delete(isAuthenticatedUser,authorizeRoles("admin"),deleteUser);
+router.route("/admin/users").get(isAuthenticatedUser,getAllUsers);
 
 module.exports = router;

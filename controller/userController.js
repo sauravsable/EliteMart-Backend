@@ -1,6 +1,5 @@
 const ErrorHandler = require("../utils/errorHandler");
 const User = require('../models/userModel');
-const Cart = require('../models/cartModel');
 const sendToken = require("../utils/jwtToken");
 const Mail = require("../utils/mail");
 const crypto = require("crypto");
@@ -10,31 +9,32 @@ exports.registerUser = async (req, res, next) => {
     
     const {name,email,password} = req.body;
 
-    const avatar = req.file;
+    const existingUserName = await User.findOne({ name: name });
+
+    if (existingUserName) {
+        return res.status(400).json({ success: false, message: 'User Name is not available' });
+    }
+
     
-    const {key,imageUrl} = await uploadToS3(avatar);
+    const existingUserEmail = await User.findOne({ email: email });
 
-    console.log(imageUrl);
+    if (existingUserEmail) {
+        return res.status(400).json({ success: false, message: 'Email already exists.' });
+    }
 
-        const user = await User.create({
-          name,
-          email,
-          password,
-          avatar: {
-            key: key,
-            url: imageUrl,
-          },
-        });
+    const user = await User.create({
+        name,
+        email,
+        password,
+    });
 
-        sendToken(user,201,res)
+    sendToken(user,201,res)
 };
 
 // Login User
 exports.loginUser = async (req,res,next)=>{
 
     const {email,password} = req.body;
-
-    //checking if user has given password and email
 
     if(!email || !password){
         return next(new ErrorHandler("Please Enter Email & Password",400));
@@ -71,8 +71,10 @@ exports.logout =  async(req,res,next)=>{
 //Forget Password
 
 exports.forgetPassword = async(req,res,next)=>{
-
-    const user = await User.findOne({email:req.body.email});
+    const {email} = req.body;
+    console.log(email);
+    
+    const user = await User.findOne({email:email});
     console.log(user);
 
     if(!user){
@@ -82,11 +84,7 @@ exports.forgetPassword = async(req,res,next)=>{
     //Get ResetPassword Token
     const resetToken = user.getResetPasswordToken();
 
-    console.log(resetToken);
-
     await user.save({validateBeforeSave:false});
-
-    console.log(user);
 
     const resetPasswordUrl = `${process.env.FRONTEND_URI}/password/reset/${resetToken}`;
 
@@ -95,7 +93,7 @@ exports.forgetPassword = async(req,res,next)=>{
 
     try{
 
-        await Mail.sendMail({
+        Mail.sendMail({
             email:user.email,
             subject:"Ecommerce Password Recovery",
             message
@@ -183,14 +181,48 @@ exports.updateUserProfile = async (req, res, next) => {
 
         const {name,email} = req.body;
 
-        const avatar = req.file; 
+        const user = await User.findOne({_id : req.user.id});
+
+        if(user.name != name){
+            
+            const existingUserName = await User.findOne({ name: name });
+
+            if (existingUserName) {
+              return res.status(400).json({ success: false, message: 'User Name is not available' });
+            }
+        }
+
+        if(user.email != email){
+            const existingUserEmail = await User.findOne({ email: email });
+    
+            if (existingUserEmail) {
+             return res.status(400).json({ success: false, message: 'Email already exists.' });
+            }
+        }
 
         const newUserData = {
             name: name,
             email: email
         };
 
-        if (avatar && avatar !== "") { // Check for avatar presence
+        // Update user profile with new data
+        const updatedUser = await User.findByIdAndUpdate(req.user._id, newUserData, { new: true });
+
+        res.status(200).json({ success: true});
+    } catch (error) {
+        console.error("Error updating user profile:", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
+
+exports.updateProfileImage = async (req, res, next) => {
+    try {
+
+        const avatar = req.file;
+
+        let newUserData;
+        if (avatar && avatar !== "") {
             const user = await User.findById(req.user._id);
 
             if (!user) {
@@ -206,9 +238,11 @@ exports.updateUserProfile = async (req, res, next) => {
             const {key,imageUrl} = await uploadToS3(avatar);
 
             
-            newUserData.avatar = {
-                key: key,
-                url: imageUrl
+            newUserData = {
+                avatar: {
+                    key: key,
+                    url: imageUrl
+                }
             };
         }
 
@@ -226,109 +260,9 @@ exports.updateUserProfile = async (req, res, next) => {
 exports.getAllUsers = async(req,res,next)=>{
 
     const users = await User.find();
-
-    // const users = await User.aggregate([
-    //     {
-    //       $match: {}
-    //     }
-    // ]);
       
     res.status(200).json({
         success:true,
         users
     })
-};
-
-//Get Single Users (Admin)
-exports.getSingleUser = async(req,res,next)=>{
-
-    const user = await User.findById(req.params.id);
-
-    if(!user){
-        return next(new ErrorHandler(`User Does not Exist with id: ${req.params.id}`,400));
-    }
-
-    res.status(200).json({
-        success:true,
-        user
-    })
-};
-
-
-// Update user Role (Admin)
-exports.updateUserRole = async(req,res,next)=>{
-
-    const newUserData = {
-        name:req.body.name,
-        email:req.body.email,
-        role:req.body.role
-    };
-
-    const user = await User.findByIdAndUpdate(req.user.id,newUserData,{
-        new:true,
-        runValidators:true,
-        useFindAndModify:true
-    });
-
-    res.status(200).json({
-        success:true
-    });
-};
-
-
-// Update user Profile (Admin)
-exports.deleteUser = async(req,res,next)=>{
-
-    const user = await User.findById(req.params.id);
-
-    if(!user){
-        return next(new ErrorHandler(`User Does not Exist with id: ${req.params.id}`,400));
-    }
-
-    await user.remove();
-
-    res.status(200).json({
-        success:true,
-        message:"User Deleted Successfully"
-    });
-};
-
-exports.addCart = async (req, res, next) => {
-
-        const { cartname } = req.body;
-
-        if (!cartname) {
-            return next(new ErrorHandler("Please Enter Cart Name", 400));
-        }
-
-        const existingCart = await Cart.findOne({ userId: req.user._id, cartName: cartname });
-
-        if (existingCart) {
-            return next(new ErrorHandler("Please try a different name", 400));
-        }
-
-        await Cart.create({
-            userId: req.user._id,
-            cartName: cartname
-        });
-
-        res.status(200).json({
-            success: true,
-            message: "Cart Created Successfully"
-        });
-};
-
-
-exports.getCarts = async (req, res, next) => {
-
-    const carts = await Cart.find({ userId: req.user._id});
-
-    if (!carts) {
-        return next(new ErrorHandler("No Carts", 400));
-    }
-
-    res.status(200).json({
-        success: true,
-        carts : carts
-    });
-};
+};  

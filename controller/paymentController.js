@@ -5,6 +5,7 @@ exports.processPayment = async (req, res, next) => {
   const myPayment = await stripe.paymentIntents.create({
     amount: req.body.amount,
     currency: "inr",
+    description: 'Purchase of products from EliteMart',
     metadata: {
       company: "Ecommerce",
     },

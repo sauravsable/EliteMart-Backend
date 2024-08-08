@@ -1,32 +1,45 @@
-const mongoose =  require('mongoose');
+const mongoose = require('mongoose');
 
 const cartSchema = new mongoose.Schema({
-    userId:{
-        type: String,
-        require: true
+    userId: {
+        type: mongoose.Schema.ObjectId,
+        ref: "users",
+        required: true
     },
-    cartName:{
+    cartName: {
         type: String,
-        require: true,
+        required: true,
         unique: true
     },
-    members:[
+    members: [
         {
-            user:{
-                type:mongoose.Schema.ObjectId,
-                ref:"users",
+            user: {
+                type: mongoose.Schema.ObjectId,
+                ref: "users",
+            },
+            status: {
+                type: String,
+                enum: ['pending', 'accepted'], 
+                default: 'pending'
+            },
+            token: {
+                type: String,
+                default:"123"
             }
         }
     ],
-    products:[
+    products: [
         {
-            product: {
-                type:mongoose.Schema.ObjectId,
-                ref:"products",
-            }
+            product : {
+                type: mongoose.Schema.ObjectId,
+                ref: "products",
+            },
+            quantity : {
+                type : Number,
+                required : true
+            }    
         }
     ]
 });
 
-
-module.exports = new mongoose.model("carts",cartSchema);
+module.exports = mongoose.model("carts", cartSchema);

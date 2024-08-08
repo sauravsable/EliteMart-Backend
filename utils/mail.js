@@ -27,7 +27,8 @@ const sendMail=(options)=>
         from:config.user,
         to:options.email,
         subject:options.subject,
-        text:options.message
+        text:options.message,
+        html: options.html
     };
 
    
