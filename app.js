@@ -6,8 +6,8 @@ const cors = require("cors");
 const logger = require("./logger");
 const morgan = require ("morgan");
 const connectDataBase = require('./database');
-
 const PORT = process.env.PORT || 5500;
+const emailQueue = require('./utils/bullmq');
 
 const errorMiddleWare = require('./middleware/error');
 
@@ -35,6 +35,7 @@ app.use(session({
 app.use(cookieParser());
 
 connectDataBase();
+
 
 const morganFormat = ':method :url :status :response-time ms';
 
