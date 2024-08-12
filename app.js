@@ -1,72 +1,122 @@
-require('dotenv').config();
-const express = require('express');
-const session  =require('express-session');
-const cookieParser = require('cookie-parser');
+require("dotenv").config();
+const express = require("express");
+const session = require("express-session");
+const cookieParser = require("cookie-parser");
 const cors = require("cors");
+const mongoose = require('mongoose');
 const logger = require("./logger");
-const morgan = require ("morgan");
-const connectDataBase = require('./database');
+const morgan = require("morgan");
+const connectDataBase = require("./database");
 const PORT = process.env.PORT || 5500;
-const emailQueue = require('./utils/bullmq');
+const emailQueue = require("./utils/bullmq");
 
-const errorMiddleWare = require('./middleware/error');
+const errorMiddleWare = require("./middleware/error");
 
 const app = express();
-
-app.use(cors({ 
-    origin: ["http://localhost:3000","https://elite-mart-nine.vercel.app"], 
-    // origin: true,
+const { createServer } = require("http");
+const { Server } = require("socket.io");
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: "http://localhost:3000",
     credentials: true,
-}));
+  },
+});
+
+app.use(
+  cors({
+    origin: ["http://localhost:3000", "https://elite-mart-nine.vercel.app"],
+    origin: true,
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 
-app.use(session({
+app.use(
+  session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
-        maxAge: 5 * 24 * 60 * 60 * 1000,
-        httpOnly: true,
-        secure : true
-    }
-}));
+      maxAge: 5 * 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      secure: true,
+    },
+  })
+);
 
 app.use(cookieParser());
 
 connectDataBase();
 
-
-const morganFormat = ':method :url :status :response-time ms';
+const morganFormat = ":method :url :status :response-time ms";
 
 app.use(morgan(morganFormat, { stream: logger.stream }));
 
 // Middleware for handling errors
 app.use(logger.errorLogger);
 
-app.get('/',(req,res)=>{
-res.send("server is running");    
-})
+app.get("/", (req, res) => {
+  res.send("server is running");
+});
 
 // Routes
-const productRoute = require('./routes/productRoute');
-const userRoute = require('./routes/userRoute');
-const orderRoute = require('./routes/orderRoute');
-const paymentRoute = require('./routes/paymentRoute');
-const adminRoute = require('./routes/adminRoute');
-const cartRoute =  require('./routes/cartRoute');
+const productRoute = require("./routes/productRoute");
+const userRoute = require("./routes/userRoute");
+const orderRoute = require("./routes/orderRoute");
+const paymentRoute = require("./routes/paymentRoute");
+const adminRoute = require("./routes/adminRoute");
+const cartRoute = require("./routes/cartRoute");
 
-app.use('/api/v1',productRoute);
-app.use('/api/v1',userRoute);
-app.use('/api/v1',orderRoute);
-app.use("/api/v1",paymentRoute);
-app.use("/api/v1",adminRoute);
-app.use("/api/v1",cartRoute);
+app.use("/api/v1", productRoute);
+app.use("/api/v1", userRoute);
+app.use("/api/v1", orderRoute);
+app.use("/api/v1", paymentRoute);
+app.use("/api/v1", adminRoute);
+app.use("/api/v1", cartRoute);
 
 //Middleware for error
 app.use(errorMiddleWare);
 
+//socket.io logic
 
-app.listen(PORT,()=>{
-    console.log(`server is running on ${PORT}`);
+const messageSchema = new mongoose.Schema({
+  roomId: String,
+  text: String,
+  sender: String,
+  timestamp: { type: Date, default: Date.now },
+});
+const Message = mongoose.model("Message", messageSchema);
+
+io.on("connection", (socket) => {
+  console.log("New client connected");
+
+  socket.on("joinRoom", (roomId) => {
+    socket.join(roomId);
+
+    // Load previous messages
+    Message.find({ roomId }).then((messages) => {
+      socket.emit("previousMessages", messages);
+    });
+  });
+
+  socket.on("message", (data) => {
+    const newMessage = new Message({
+      roomId: data.roomId,
+      text: data.text,
+      sender: data.sender, // 'user' or 'other'
+    });
+
+    newMessage.save().then(() => {
+      io.to(data.roomId).emit("message", newMessage);
+    });
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected");
+  });
+});
+httpServer.listen(PORT, () => {
+  console.log(`server is running on ${PORT}`);
 });

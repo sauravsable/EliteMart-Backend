@@ -25,7 +25,7 @@ logger.stream = {
     };
 
     // Log to console
-    console.log('Request Log:', logObject);
+    // console.log('Request Log:', logObject);
 
     // Save log to database
     await logToDatabase(logObject);
