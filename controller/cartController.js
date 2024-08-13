@@ -82,55 +82,6 @@ exports.getCartDetails = async (req, res, next) => {
 };
 
 
-// exports.sendInvitation = async (req, res, next) => {
-//   const { cartId, userEmail, userId } = req.body;
-
-//   try {
-//     const cart = await Cart.findById(cartId);
-//     if (!cart) {
-//       return next(new ErrorHandler("Cart Not Found", 400));
-//     }
-
-//     const isUserPresent = cart.members.some(member => member.user.toString() === userId);
-//     if (isUserPresent) {
-//       return next(new ErrorHandler("Already Requested Or Already a Member.", 400));
-//     }
-
-//     const token = crypto.randomBytes(20).toString('hex');
-
-//     const user = await User.findById(userId);
-//     if (!user) {
-//       return next(new ErrorHandler("User Not Found", 400));
-//     }
-
-//     const encodedCartName = encodeURIComponent(cart.cartName);
-//     const encodedUsername = encodeURIComponent(user.name);
-
-//     Mail.sendMail({
-//       email: userEmail,
-//       subject: "Cart Invitation",
-//       html: `
-//         <p>Hello,</p>
-//         <p>${user.name} has invited you to join the cart named "${cart.cartName}".</p>
-//         <p>Click the button below to accept the invitation:</p>
-//         <a href="http://localhost:3000/accept-invitation?cartId=${cartId}&token=${token}&userId=${userId}&cartName=${encodedCartName}&username=${encodedUsername}" style="display: inline-block; padding: 10px 20px; background-color: #28a745; color: white; text-decoration: none;">Accept Invitation</a>
-//       `
-//     });
-
-//     cart.members.push({ user: userId, status: 'pending', token: token });
-//     await cart.save();
-
-//     res.status(200).json({
-//       success: true,
-//       message: "Invitation Sent Successfully"
-//     });
-
-//   } catch (error) {
-//     return next(new ErrorHandler("Error sending invitation", 500));
-//   }
-// };
-
-
 exports.sendInvitation = async (req, res, next) => {
   const { cartId, userEmail, userId } = req.body;
 
