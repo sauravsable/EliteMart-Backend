@@ -3,7 +3,7 @@ const express = require("express");
 const session = require("express-session");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const logger = require("./logger");
 const morgan = require("morgan");
 const connectDataBase = require("./database");
@@ -84,39 +84,46 @@ app.use(errorMiddleWare);
 const messageSchema = new mongoose.Schema({
   roomId: String,
   text: String,
-  sender: String,
+  senderId: { type: mongoose.Schema.ObjectId, ref: "users", required: true },
   timestamp: { type: Date, default: Date.now },
 });
 const Message = mongoose.model("Message", messageSchema);
 
+
 io.on("connection", (socket) => {
   console.log("New client connected");
 
-  socket.on("joinRoom", (roomId) => {
-    socket.join(roomId);
-
-    // Load previous messages
-    Message.find({ roomId }).then((messages) => {
+  socket.on("joinRoom", async (roomId) => {
+    try {
+      socket.join(roomId);
+      const messages = await Message.find({ roomId });
       socket.emit("previousMessages", messages);
-    });
+    } catch (error) {
+      console.error("Error loading previous messages:", error);
+    }
   });
 
-  socket.on("message", (data) => {
-    const newMessage = new Message({
-      roomId: data.roomId,
-      text: data.text,
-      sender: data.sender, // 'user' or 'other'
-    });
+  socket.on("message", async (data) => {
+    try {
+      // Convert senderId from string to ObjectId
+      const newMessage = new Message({
+        roomId: data.roomId,
+        text: data.text,
+        senderId: data.senderId, // Use senderId here
+      });
 
-    newMessage.save().then(() => {
+      await newMessage.save();
       io.to(data.roomId).emit("message", newMessage);
-    });
+    } catch (error) {
+      console.error("Error saving message:", error);
+    }
   });
 
   socket.on("disconnect", () => {
     console.log("Client disconnected");
   });
 });
+
 httpServer.listen(PORT, () => {
   console.log(`server is running on ${PORT}`);
 });
