@@ -16,6 +16,7 @@ const app = express();
 const { createServer } = require("http");
 const { Server } = require("socket.io");
 const httpServer = createServer(app);
+
 const io = new Server(httpServer, {
   cors: {
     origin: "http://localhost:3000",
@@ -117,6 +118,7 @@ io.on("connection", (socket) => {
     console.log("Client disconnected");
   });
 });
+
 httpServer.listen(PORT, () => {
   console.log(`server is running on ${PORT}`);
 });
