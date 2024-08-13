@@ -3,12 +3,11 @@ const express = require("express");
 const session = require("express-session");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
-const mongoose = require("mongoose");
 const logger = require("./logger");
 const morgan = require("morgan");
 const connectDataBase = require("./database");
 const PORT = process.env.PORT || 5500;
-
+const Message =  require('./models/messageModel');
 const errorMiddleWare = require("./middleware/error");
 
 const app = express();
@@ -80,16 +79,6 @@ app.use("/api/v1", cartRoute);
 app.use(errorMiddleWare);
 
 //socket.io logic
-
-const messageSchema = new mongoose.Schema({
-  roomId: String,
-  text: String,
-  senderId: { type: mongoose.Schema.ObjectId, ref: "users", required: true },
-  timestamp: { type: Date, default: Date.now },
-});
-const Message = mongoose.model("Message", messageSchema);
-
-
 io.on("connection", (socket) => {
   console.log("New client connected");
 
@@ -105,11 +94,10 @@ io.on("connection", (socket) => {
 
   socket.on("message", async (data) => {
     try {
-      // Convert senderId from string to ObjectId
       const newMessage = new Message({
         roomId: data.roomId,
         text: data.text,
-        senderId: data.senderId, // Use senderId here
+        senderId: data.senderId,
       });
 
       await newMessage.save();
