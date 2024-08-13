@@ -14,8 +14,8 @@ const errorMiddleWare = require('./middleware/error');
 const app = express();
 
 app.use(cors({ 
-    origin: ["http://localhost:3000","https://elite-mart-nine.vercel.app"], 
-    // origin: true,
+    // origin: ["http://localhost:3000","https://elite-mart-nine.vercel.app"], 
+    origin: true,
     credentials: true,
 }));
 
