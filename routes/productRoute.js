@@ -8,7 +8,8 @@ const {
     createProductReview,
     getProductReviews,
     deleteReview,
-    getAdminProducts
+    getAdminProducts,
+    getCameras
     } = require("../controller/productController");
     
 const { isAuthenticatedUser, authorizeRoles } = require("../middleware/auth");
@@ -19,6 +20,8 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 router.route('/products').get(getAllProducts);
+
+router.route('/getCameras').get(getCameras);
 
 router.route("/admin/products").get(isAuthenticatedUser,authorizeRoles("admin"),getAdminProducts);
 

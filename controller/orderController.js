@@ -1,7 +1,7 @@
 const Order = require('../models/orderModel');
 const Product = require('../models/productModel');
 const ErrorHandler = require('../utils/errorHandler');
-
+const orderQueue = require('../utils/bullmq');
 // create new order
 exports.newOrder = async(req,res,next)=>{
 
@@ -15,7 +15,7 @@ exports.newOrder = async(req,res,next)=>{
         totalPrice
     } = req.body;
 
-    const order = await Order.create({
+    const orderData = {
         shippingInfo,
         orderItems,
         paymentInfo,
@@ -25,11 +25,14 @@ exports.newOrder = async(req,res,next)=>{
         totalPrice,
         paidAt: Date.now(),
         user: req.user._id 
-    });
+    };
+
+    // Add the order creation task to the queue
+    await orderQueue.add('createOrder', orderData);
 
     res.status(201).json({
         success:true,
-        order
+        order:orderData
     })
 };
 

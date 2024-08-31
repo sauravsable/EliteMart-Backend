@@ -20,4 +20,11 @@ const emailQueue = new Queue('emailQueue', {
     connection: redis 
 });
 
-module.exports = emailQueue;
+const orderQueue = new Queue('orderQueue', {
+    connection: redis 
+});
+
+module.exports = {
+    emailQueue,
+    orderQueue
+};
