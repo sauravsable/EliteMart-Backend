@@ -271,25 +271,6 @@ exports.deleteReview = async (req, res, next) => {
   });
 };
 
-// Get Cameras
-exports.getCameras = async (req, res) => {
-  try {
-    const products = await Product.find({ 
-       category: "Camera", 
-      _id: { $ne: "66be293f2d936b55b97fca4c" } // Corrected the query for not equal
-    });
-
-    res.status(200).json({
-      success: true,
-      products,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server Error',
-    });
-  }
-};
 
 
 
